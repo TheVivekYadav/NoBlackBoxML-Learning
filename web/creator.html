@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=0.9, user-scalable=no">
+    <title>Data Creator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id="content">
+        <h1>Data Creator</h1>
+        <div>
+            <input type="text" id="student"
+            placeholder="type your name" />
+            <span id="instructions"></span>
+            <button id="advanceBtn" onclick="start()">START</button>
+        </div>
+        <br>
+        <div class="sketchPadContainer" id="sketchPadContainer" style="visibility: hidden;">
+
+        </div>
+    </div>
+    <script src="js/SketchPad.js"></script>
+    <script src="js/draw.js"></script>
+    <script>
+        let index = 0;
+        
+
+        // simple labels to draw for ml training
+        const labels = ["car", "fish", "house", "tree", "bicycle", "guitar", "pencil"];
+        
+
+        const data = {
+            studentName: null,
+            sessionID: new Date().getTime(),
+            drawings: {}
+        }
+
+        const sketchPad = new SketchPad(document.getElementById("sketchPadContainer"));
+
+        const student = document.getElementById("student");
+        const instructions = document.getElementById("instructions");
+        const advanceBtn = document.getElementById("advanceBtn");
+
+        function start() {
+            if (student.value.trim() === "") {
+                alert("Please enter your name");
+            } else {
+                data.studentName = student.value.trim();
+                student.style.display = "none";
+                document.getElementById("sketchPadContainer").style.visibility = "visible";
+                nextDrawing();
+            }
+        }
+
+        function nextDrawing() {
+            if (index >= labels.length) {
+                finishSession();
+                return;
+            }
+
+            const label = labels[index];
+            instructions.innerHTML = "Please draw a " + label + ".";
+            advanceBtn.innerHTML = "Next";
+            advanceBtn.onclick = next;
+            sketchPad.reset();
+        }
+
+        function next() {
+            const label = labels[index];
+            if (sketchPad.paths.length === 0) {
+                alert("Please draw a " + label + ".");
+                return;
+            }
+            
+            data.drawings[label] = sketchPad.paths;
+            index++;
+            nextDrawing();
+        }
+
+        function finishSession() {
+            instructions.innerHTML = "Take your downloaded file and place it alongside the others in the dataset";
+            advanceBtn.innerHTML = "Finish";
+            advanceBtn.onclick = () => {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
+                const downloadAnchorNode = document.createElement('a');
+                downloadAnchorNode.setAttribute("href", dataStr);
+                downloadAnchorNode.setAttribute("download", data.sessionID + ".json");
+                document.body.appendChild(downloadAnchorNode);
+                downloadAnchorNode.click();
+                downloadAnchorNode.remove();
+                advanceBtn.remove();
+            };
+
+            document.getElementById("sketchPadContainer").style.visibility = "hidden";
+        }
+    </script>
+</body>
+
+</html>
